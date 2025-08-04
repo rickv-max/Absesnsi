@@ -1,0 +1,63 @@
+<!-- register.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registrasi Karyawan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded shadow-md w-full max-w-sm">
+    <h1 class="text-2xl font-bold text-center mb-6">Daftar Akun Karyawan</h1>
+    <form id="registerForm" class="space-y-4">
+      <div>
+        <label for="email" class="block text-sm font-medium">Email</label>
+        <input type="email" id="email" class="w-full mt-1 p-2 border rounded" required />
+      </div>
+      <div>
+        <label for="password" class="block text-sm font-medium">Password</label>
+        <input type="password" id="password" class="w-full mt-1 p-2 border rounded" required />
+      </div>
+      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Daftar</button>
+      <p class="text-sm text-center mt-4">Sudah punya akun? <a href="index.html" class="text-blue-600 underline">Login di sini</a></p>
+    </form>
+    <p id="notif" class="text-sm text-red-600 mt-4 text-center"></p>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOboN8q5VzpUm5-WTPQtltJxjYPa5qdL8",
+      authDomain: "web-absensi-f1ba5.firebaseapp.com",
+      projectId: "web-absensi-f1ba5",
+      storageBucket: "web-absensi-f1ba5.appspot.com",
+      messagingSenderId: "690050626169",
+      appId: "1:690050626169:web:a39daeb6feb8b1ba4ddaa8"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        const uid = userCred.user.uid;
+        await setDoc(doc(db, "roles", uid), { role: "karyawan" }); // 🚫 Tidak bisa jadi admin
+        window.location.href = "index.html";
+      } catch (err) {
+        document.getElementById("notif").textContent = "Gagal daftar: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
