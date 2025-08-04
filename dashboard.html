@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard Karyawan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <nav class="bg-blue-600 text-white p-4">
+    <div class="flex justify-between items-center">
+      <h1 class="text-xl font-bold">Absensi Karyawan</h1>
+      <button onclick="logout()" class="text-sm bg-red-500 px-3 py-1 rounded hover:bg-red-600">Logout</button>
+    </div>
+  </nav>
+
+  <main class="p-4 space-y-6 max-w-xl mx-auto">
+
+    <!-- Waktu -->
+    <div class="text-center text-sm text-gray-600">
+      <span id="currentDate"></span> | <span id="currentTime"></span>
+    </div>
+
+    <!-- Status -->
+    <div class="bg-white p-4 rounded shadow">
+      <h2 class="text-lg font-semibold mb-2">Status Hari Ini</h2>
+      <p id="statusText" class="text-gray-700">Belum Absen</p>
+    </div>
+
+    <!-- Kamera -->
+    <div class="bg-white p-4 rounded shadow space-y-4">
+      <h2 class="text-lg font-semibold mb-2">Ambil Selfie (Wajib)</h2>
+      <video id="video" autoplay playsinline class="rounded w-full"></video>
+      <canvas id="canvas" class="hidden"></canvas>
+      <img id="preview" alt="Foto Anda" class="rounded shadow w-full hidden"/>
+    </div>
+
+    <!-- Tombol Absensi -->
+    <div class="bg-white p-4 rounded shadow space-y-4">
+      <h2 class="text-lg font-semibold mb-2">Form Absensi</h2>
+      <button onclick="absen('checkIn')" class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Check-In</button>
+      <button onclick="absen('checkOut')" class="w-full bg-yellow-500 text-white py-2 rounded hover:bg-yellow-600">Check-Out</button>
+      <p id="notif" class="text-sm mt-2"></p>
+    </div>
+
+    <!-- Riwayat Hari Ini -->
+    <div class="bg-white p-4 rounded shadow">
+      <h2 class="text-lg font-semibold mb-2">Riwayat Kehadiran Hari Ini</h2>
+      <ul id="riwayatList" class="text-sm text-gray-800 space-y-1"></ul>
+    </div>
+  </main>
+
+  <!-- ✅ Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOboN8q5VzpUm5-WTPQtltJxjYPa5qdL8",
+      authDomain: "web-absensi-f1ba5.firebaseapp.com",
+      projectId: "web-absensi-f1ba5",
+      storageBucket: "web-absensi-f1ba5.appspot.com",
+      messagingSenderId: "690050626169",
+      appId: "1:690050626169:web:a39daeb6feb8b1ba4ddaa8",
+      measurementId: "G-07F56Q9L8Q"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    const auth = getAuth(app);
+
+    // Waktu realtime
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById("currentDate").textContent = now.toLocaleDateString("id-ID");
+      document.getElementById("currentTime").textContent = now.toLocaleTimeString("id-ID");
+    }, 1000);
+
+    // Kamera
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const preview = document.getElementById("preview");
+    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+      video.srcObject = stream;
+    });
+
+    const uid = sessionStorage.getItem("uid");
+    const nama = sessionStorage.getItem("nama") || "Karyawan";
+
+    // Load status absen hari ini
+    const today = new Date().toISOString().slice(0, 10);
+    const docRef = doc(db, "absensi", `${uid}_${today}`);
+    const riwayatList = document.getElementById("riwayatList");
+    const statusText = document.getElementById("statusText");
+
+    getDoc(docRef).then((snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        statusText.textContent = data.checkOut ? "✅ Sudah Check-Out" : "✅ Sudah Check-In";
+        riwayatList.innerHTML = `
+          <li>✅ Check-In: ${data.checkIn || "-"}</li>
+          <li>✅ Check-Out: ${data.checkOut || "-"}</li>
+        `;
+      }
+    });
+
+    async function absen(tipe) {
+      const selfie = ambilSelfie();
+      const time = new Date().toLocaleTimeString("id-ID");
+
+      const fileRef = ref(storage, `selfies/${uid}/${tipe}_${today}.png`);
+      await uploadString(fileRef, selfie, 'data_url');
+      const photoURL = await getDownloadURL(fileRef);
+
+      const absenData = (await getDoc(docRef)).data() || { uid, nama, tanggal: today };
+      absenData[tipe] = time;
+      absenData[`${tipe}Url`] = photoURL;
+
+      await setDoc(docRef, absenData);
+      showNotif(`Berhasil ${tipe === 'checkIn' ? 'Check-In' : 'Check-Out'}`, "green");
+      statusText.textContent = absenData.checkOut ? "✅ Sudah Check-Out" : "✅ Sudah Check-In";
+      riwayatList.innerHTML = `
+        <li>✅ Check-In: ${absenData.checkIn || "-"}</li>
+        <li>✅ Check-Out: ${absenData.checkOut || "-"}</li>
+      `;
+    }
+
+    function ambilSelfie() {
+      const ctx = canvas.getContext("2d");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      const dataURL = canvas.toDataURL("image/png");
+      preview.src = dataURL;
+      preview.classList.remove("hidden");
+      return dataURL;
+    }
+
+    function showNotif(text, color) {
+      const notif = document.getElementById("notif");
+      notif.innerText = text;
+      notif.className = `text-sm mt-2 text-${color}-600 font-semibold`;
+    }
+
+    function logout() {
+      signOut(auth).then(() => {
+        sessionStorage.clear();
+        window.location.href = "index.html";
+      });
+    }
+
+    // Auth check
+    onAuthStateChanged(auth, user => {
+      if (!user) window.location.href = "index.html";
+      else {
+        sessionStorage.setItem("uid", user.uid);
+        sessionStorage.setItem("nama", user.email.split('@')[0]); // sementara dari email
+      }
+    });
+  </script>
+</body>
+</html>
