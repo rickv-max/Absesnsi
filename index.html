@@ -1,4 +1,3 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -19,65 +18,64 @@
         <label for="password" class="block text-sm font-medium">Password</label>
         <input type="password" id="password" class="w-full mt-1 p-2 border rounded" required />
       </div>
-      <div>
-        <label for="role" class="block text-sm font-medium">Masuk Sebagai</label>
-        <select id="role" class="w-full mt-1 p-2 border rounded" required>
-          <option value="karyawan">Karyawan</option>
-          <option value="admin">Admin</option>
-        </select>
-      </div>
       <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
     </form>
+
+    <!-- ✅ Link ke halaman register -->
+    <p class="text-sm text-center mt-4">
+      Belum punya akun? <a href="register.html" class="text-blue-600 underline">Daftar di sini</a>
+    </p>
+
     <p id="notif" class="text-sm text-red-600 mt-4 text-center"></p>
   </div>
 
-  <!-- Firebase Auth -->
+  <!-- ✅ Firebase login -->
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCOboN8q5VzpUm5-WTPQtltJxjYPa5qdL8",
-    authDomain: "web-absensi-f1ba5.firebaseapp.com",
-    projectId: "web-absensi-f1ba5",
-    storageBucket: "web-absensi-f1ba5.appspot.com",
-    messagingSenderId: "690050626169",
-    appId: "1:690050626169:web:a39daeb6feb8b1ba4ddaa8"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOboN8q5VzpUm5-WTPQtltJxjYPa5qdL8",
+      authDomain: "web-absensi-f1ba5.firebaseapp.com",
+      projectId: "web-absensi-f1ba5",
+      storageBucket: "web-absensi-f1ba5.appspot.com",
+      messagingSenderId: "690050626169",
+      appId: "1:690050626169:web:a39daeb6feb8b1ba4ddaa8"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-  const form = document.getElementById("loginForm");
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+    const form = document.getElementById("loginForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
 
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      sessionStorage.setItem("uid", user.uid);
-      sessionStorage.setItem("nama", email.split('@')[0]);
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        sessionStorage.setItem("uid", user.uid);
+        sessionStorage.setItem("nama", email.split('@')[0]);
 
-      // 🔍 Cek role dari Firestore
-      const roleSnap = await getDoc(doc(db, "roles", user.uid));
-      if (roleSnap.exists()) {
-        const role = roleSnap.data().role;
-        if (role === "admin") {
-          window.location.href = "admin.html";
+        // 🔍 Ambil role dari Firestore
+        const roleSnap = await getDoc(doc(db, "roles", user.uid));
+        if (roleSnap.exists()) {
+          const role = roleSnap.data().role;
+          if (role === "admin") {
+            window.location.href = "admin.html";
+          } else {
+            window.location.href = "dashboard.html";
+          }
         } else {
-          window.location.href = "dashboard.html";
+          document.getElementById("notif").textContent = "Role tidak ditemukan. Hubungi admin.";
         }
-      } else {
-        document.getElementById("notif").textContent = "Role belum terdaftar. Hubungi admin.";
+      } catch (error) {
+        document.getElementById("notif").textContent = "Login gagal. Email atau password salah.";
       }
-    } catch (error) {
-      document.getElementById("notif").textContent = "Login gagal. Email atau password salah.";
-    }
-  });
-</script>
+    });
+  </script>
 </body>
 </html>
