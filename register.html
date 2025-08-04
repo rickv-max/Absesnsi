@@ -1,4 +1,3 @@
-<!-- register.html -->
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -46,16 +45,22 @@
 
     document.getElementById("registerForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const notif = document.getElementById("notif");
 
       try {
         const userCred = await createUserWithEmailAndPassword(auth, email, password);
         const uid = userCred.user.uid;
-        await setDoc(doc(db, "roles", uid), { role: "karyawan" }); // 🚫 Tidak bisa jadi admin
+        console.log("✅ UID berhasil dibuat:", uid);
+
+        await setDoc(doc(db, "roles", uid), { role: "karyawan" });
+        console.log("✅ Role 'karyawan' berhasil ditulis ke Firestore");
+
         window.location.href = "index.html";
       } catch (err) {
-        document.getElementById("notif").textContent = "Gagal daftar: " + err.message;
+        console.error("❌ Gagal daftar:", err.message);
+        notif.textContent = "Gagal daftar: " + err.message;
       }
     });
   </script>
