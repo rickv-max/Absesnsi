@@ -1,0 +1,87 @@
+<!-- admin.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Absensi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <nav class="bg-blue-700 text-white p-4">
+    <div class="flex justify-between">
+      <h1 class="text-xl font-bold">Dashboard Admin</h1>
+      <button onclick="logout()" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">Logout</button>
+    </div>
+  </nav>
+
+  <main class="p-4 max-w-6xl mx-auto">
+    <h2 class="text-2xl font-semibold mb-4">Data Kehadiran Karyawan</h2>
+    <table class="w-full text-sm bg-white shadow rounded overflow-x-auto">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="p-2 text-left">Nama</th>
+          <th class="p-2">Tanggal</th>
+          <th class="p-2">Check-In</th>
+          <th class="p-2">Check-Out</th>
+          <th class="p-2">Selfie Masuk</th>
+          <th class="p-2">Selfie Pulang</th>
+        </tr>
+      </thead>
+      <tbody id="dataTable" class="text-center"></tbody>
+    </table>
+  </main>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOboN8q5VzpUm5-WTPQtltJxjYPa5qdL8",
+      authDomain: "web-absensi-f1ba5.firebaseapp.com",
+      projectId: "web-absensi-f1ba5",
+      storageBucket: "web-absensi-f1ba5.appspot.com",
+      messagingSenderId: "690050626169",
+      appId: "1:690050626169:web:a39daeb6feb8b1ba4ddaa8",
+      measurementId: "G-07F56Q9L8Q"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Proteksi akses admin
+    onAuthStateChanged(auth, async user => {
+      if (!user) return window.location.href = "index.html";
+      const snapshot = await getDocs(collection(db, "absensi"));
+      const table = document.getElementById("dataTable");
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        table.innerHTML += `
+          <tr>
+            <td class="p-2">${d.nama || "-"}</td>
+            <td class="p-2">${d.tanggal}</td>
+            <td class="p-2">${d.checkIn || "-"}</td>
+            <td class="p-2">${d.checkOut || "-"}</td>
+            <td class="p-2">
+              ${d.checkInUrl ? `<a href="${d.checkInUrl}" target="_blank" class="text-blue-600 underline">Lihat</a>` : "-"}
+            </td>
+            <td class="p-2">
+              ${d.checkOutUrl ? `<a href="${d.checkOutUrl}" target="_blank" class="text-blue-600 underline">Lihat</a>` : "-"}
+            </td>
+          </tr>
+        `;
+      });
+    });
+
+    function logout() {
+      signOut(auth).then(() => {
+        sessionStorage.clear();
+        window.location.href = "index.html";
+      });
+    }
+  </script>
+</body>
+</html>
