@@ -1,0 +1,75 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login Absensi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded shadow-md w-full max-w-sm">
+    <h1 class="text-2xl font-bold text-center mb-6">Login Absensi</h1>
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label for="email" class="block text-sm font-medium">Email</label>
+        <input type="email" id="email" class="w-full mt-1 p-2 border rounded" required />
+      </div>
+      <div>
+        <label for="password" class="block text-sm font-medium">Password</label>
+        <input type="password" id="password" class="w-full mt-1 p-2 border rounded" required />
+      </div>
+      <div>
+        <label for="role" class="block text-sm font-medium">Masuk Sebagai</label>
+        <select id="role" class="w-full mt-1 p-2 border rounded" required>
+          <option value="karyawan">Karyawan</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
+    </form>
+    <p id="notif" class="text-sm text-red-600 mt-4 text-center"></p>
+  </div>
+
+  <!-- Firebase Auth -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCOboN8q5VzpUm5-WTPQtltJxjYPa5qdL8",
+      authDomain: "web-absensi-f1ba5.firebaseapp.com",
+      projectId: "web-absensi-f1ba5",
+      storageBucket: "web-absensi-f1ba5.appspot.com",
+      messagingSenderId: "690050626169",
+      appId: "1:690050626169:web:a39daeb6feb8b1ba4ddaa8",
+      measurementId: "G-07F56Q9L8Q"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const form = document.getElementById("loginForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const role = document.getElementById("role").value;
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        sessionStorage.setItem("uid", user.uid);
+        sessionStorage.setItem("nama", email.split('@')[0]);
+        if (role === "admin") {
+          window.location.href = "admin.html";
+        } else {
+          window.location.href = "dashboard.html";
+        }
+      } catch (error) {
+        document.getElementById("notif").textContent = "Login gagal. Periksa email atau password.";
+      }
+    });
+  </script>
+</body>
+</html>
